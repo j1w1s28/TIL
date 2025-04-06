@@ -33,17 +33,45 @@ def setup_model_and_tokenizer(model_name, quantization_config):
     tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer
 
-def prepare_korquad_dataset():
+def prepare_korquad_dataset(tokenizer, max_length=512):
     """KorQuAD 데이터셋 준비"""
     cache_dir = os.path.join(DATASET_DIR, "korquad")
     dataset = load_dataset("squad_kor_v1", cache_dir=cache_dir)
     
-    def format_qa(example):
-        return {
-            "text": f"질문: {example['question']}\n컨텍스트: {example['context']}\n답변: {example['answers']['text'][0]}"
-        }
+    def preprocess_function(examples):
+        questions = examples["question"]
+        contexts = examples["context"]
+        answers = [ans["text"][0] for ans in examples["answers"]]
+        
+        # 텍스트 포맷팅
+        texts = [
+            f"### 질문: {q}\n### 컨텍스트: {c}\n### 답변: {a}"
+            for q, c, a in zip(questions, contexts, answers)
+        ]
+        
+        # 토크나이징
+        tokenized = tokenizer(
+            texts,
+            padding="max_length",
+            truncation=True,
+            max_length=max_length,
+            return_tensors=None  # 배치 처리를 위해 None으로 설정
+        )
+        
+        # labels 설정 (input_ids와 동일)
+        tokenized["labels"] = tokenized["input_ids"].copy()
+        
+        return tokenized
     
-    return dataset.map(format_qa)
+    # 배치 처리로 데이터셋 전처리
+    tokenized_dataset = dataset.map(
+        preprocess_function,
+        batched=True,
+        remove_columns=dataset["train"].column_names,
+        desc="토크나이징 데이터셋"
+    )
+    
+    return tokenized_dataset
 
 def main():
     # 기본 설정
@@ -73,7 +101,7 @@ def main():
     model = get_peft_model(model, lora_config)
     
     # 데이터셋 준비
-    dataset = prepare_korquad_dataset()
+    dataset = prepare_korquad_dataset(tokenizer)
     
     # 학습 인자 설정
     training_args = TrainingArguments(
@@ -85,6 +113,7 @@ def main():
         logging_steps=10,
         save_steps=100,
         save_total_limit=3,
+        remove_unused_columns=False,  # 컬럼 자동 제거 비활성화
     )
     
     # 학습 시작
@@ -92,8 +121,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=dataset["train"],
-        data_collator=lambda data: {'input_ids': torch.stack([x['input_ids'] for x in data]),
-                                  'attention_mask': torch.stack([x['attention_mask'] for x in data])},
+        tokenizer=tokenizer,
     )
     
     trainer.train()
