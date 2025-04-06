@@ -5,14 +5,21 @@
 ## 프로젝트 구조
 
 ```
-LLM_SFT/
-├── QA/                     # 질의응답 모델 학습
-│   └── train_qa.py        # KorQuAD 데이터셋을 이용한 QA 모델 학습
-├── Domain_Specific/        # 도메인 특화 모델 학습
-│   └── train_domain.py    # 사용자 정의 데이터셋을 이용한 도메인 특화 모델 학습
-└── Resources/             # 프로젝트 리소스
-    ├── requirements.txt   # 필요한 패키지 목록
-    └── README.md         # 프로젝트 설명
+TIL/
+├── model/                  # 학습된 모델 저장 디렉토리
+│   ├── qa/                # QA 모델 저장
+│   └── domain/            # 도메인 특화 모델 저장
+├── dataset/               # 데이터셋 저장 디렉토리
+│   ├── korquad/          # KorQuAD 데이터셋
+│   └── domain/           # 도메인 특화 데이터셋
+└── LLM_SFT/
+    ├── QA/               # 질의응답 모델 학습
+    │   └── train_qa.py   # KorQuAD 데이터셋을 이용한 QA 모델 학습
+    ├── Domain_Specific/  # 도메인 특화 모델 학습
+    │   └── train_domain.py # 사용자 정의 데이터셋을 이용한 도메인 특화 모델 학습
+    └── Resources/        # 프로젝트 리소스
+        ├── requirements.txt # 필요한 패키지 목록
+        └── README.md     # 프로젝트 설명
 ```
 
 ## 설치 방법
@@ -31,10 +38,16 @@ pip install -r Resources/requirements.txt
 
 KorQuAD 데이터셋을 사용하여 질의응답 모델을 학습합니다:
 
+1. 데이터셋 준비:
+   - KorQuAD 데이터셋을 `/TIL/dataset/korquad/` 디렉토리에 다운로드
+
+2. 학습 실행:
 ```bash
 cd QA
 python train_qa.py
 ```
+
+학습된 모델은 `/TIL/model/qa/` 디렉토리에 저장됩니다.
 
 ### 도메인 특화 모델 학습
 
@@ -42,6 +55,7 @@ python train_qa.py
 
 1. 데이터 준비:
    - CSV 형식: instruction,input,output
+   - 파일 위치: `/TIL/dataset/domain/`
    - 예시:
      ```
      instruction,input,output
@@ -53,6 +67,8 @@ python train_qa.py
 cd Domain_Specific
 python train_domain.py
 ```
+
+학습된 모델은 `/TIL/model/domain/` 디렉토리에 저장됩니다.
 
 ## 주요 기능
 
@@ -72,6 +88,7 @@ python train_domain.py
 - 학습에는 최소 16GB 이상의 GPU 메모리 권장
 - 4비트 양자화를 통해 메모리 사용량 최적화
 - LoRA를 통해 효율적인 파인튜닝 가능
+- 모든 모델과 데이터셋은 `/TIL/model/`과 `/TIL/dataset/` 디렉토리에 저장됨
 
 ## 라이선스
 
