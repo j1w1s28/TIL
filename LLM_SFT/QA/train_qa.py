@@ -4,26 +4,39 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
     TrainingArguments,
+    Trainer
 )
 from peft import LoraConfig, get_peft_model
 from datasets import load_dataset
 import os
 
+# 프로젝트 루트 디렉토리 설정
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_CACHE_DIR = os.path.join(ROOT_DIR, "model")
+DATASET_DIR = os.path.join(ROOT_DIR, "dataset")
+
 def setup_model_and_tokenizer(model_name, quantization_config):
     """모델과 토크나이저 설정"""
+    cache_dir = os.path.join(MODEL_CACHE_DIR, "pretrained")
+    
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=quantization_config,
         device_map="auto",
-        trust_remote_code=True
+        trust_remote_code=True,
+        cache_dir=cache_dir
     )
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=cache_dir
+    )
     tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer
 
 def prepare_korquad_dataset():
     """KorQuAD 데이터셋 준비"""
-    dataset = load_dataset("squad_kor_v1")
+    cache_dir = os.path.join(DATASET_DIR, "korquad")
+    dataset = load_dataset("squad_kor_v1", cache_dir=cache_dir)
     
     def format_qa(example):
         return {
@@ -35,7 +48,7 @@ def prepare_korquad_dataset():
 def main():
     # 기본 설정
     MODEL_NAME = "beomi/llama-2-ko-7b"  # 또는 다른 한국어 LLM
-    OUTPUT_DIR = "./qa_model_output"
+    OUTPUT_DIR = os.path.join(MODEL_CACHE_DIR, "qa")
     
     # 4비트 양자화 설정
     quantization_config = BitsAndBytesConfig(

@@ -11,22 +11,32 @@ from datasets import load_dataset, Dataset
 import pandas as pd
 import os
 
+# 프로젝트 루트 디렉토리 설정
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_CACHE_DIR = os.path.join(ROOT_DIR, "model")
+DATASET_DIR = os.path.join(ROOT_DIR, "dataset")
+
 def setup_model_and_tokenizer(model_name, quantization_config):
     """모델과 토크나이저 설정"""
+    cache_dir = os.path.join(MODEL_CACHE_DIR, "pretrained")
+    
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=quantization_config,
         device_map="auto",
-        trust_remote_code=True
+        trust_remote_code=True,
+        cache_dir=cache_dir
     )
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name,
+        cache_dir=cache_dir
+    )
     tokenizer.pad_token = tokenizer.eos_token
     return model, tokenizer
 
 def prepare_custom_dataset(data_path):
     """사용자 정의 데이터셋 준비"""
-    # CSV 파일에서 데이터 로드 (예시)
-    # CSV 형식: instruction,input,output
+    # CSV 파일에서 데이터 로드
     df = pd.read_csv(data_path)
     
     def format_instruction(row):
@@ -46,8 +56,8 @@ def prepare_custom_dataset(data_path):
 def main():
     # 기본 설정
     MODEL_NAME = "beomi/llama-2-ko-7b"  # 또는 다른 한국어 LLM
-    OUTPUT_DIR = "./domain_model_output"
-    DATA_PATH = "your_domain_data.csv"  # 도메인 특화 데이터 경로
+    OUTPUT_DIR = os.path.join(MODEL_CACHE_DIR, "domain")
+    DATA_PATH = os.path.join(DATASET_DIR, "domain", "domain_data.csv")
     
     # 4비트 양자화 설정
     quantization_config = BitsAndBytesConfig(
