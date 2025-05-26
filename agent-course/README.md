@@ -23,6 +23,10 @@
    - [LlamaIndex](./unit2/llama_index/) - 컨텍스트 기반 AI 에이전트 프레임워크
    - [LangGraph](./unit2/langgraph/) - 상태 기반 에이전트 오케스트레이션 프레임워크
 
+4. [Unit 3: Use Case for Agentic RAG](./unit3/README.md)
+5. [Unit 4: Final Project - Create, Test, and Certify Your Agent](./unit4/README.md)
+6. [Bonus Units](./bonus/README.md)
+
 ## 학습 목표
 
 - AI 에이전트의 기본 개념 이해
